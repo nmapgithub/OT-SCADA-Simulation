@@ -1,0 +1,38 @@
+version: '3.8'
+
+# Production Docker Compose Configuration
+# This version removes hot-reload and uses optimized settings
+
+services:
+  ot-scada-simulation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ot-scada-sim-prod
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: always
+    networks:
+      - ot-scada-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/devices"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  ot-scada-network:
+    driver: bridge
+

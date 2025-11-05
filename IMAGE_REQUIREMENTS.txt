@@ -1,0 +1,25 @@
+
+NOTE: Military Equipment Image Placeholders
+==========================================
+
+For realistic simulation, replace emoji icons with actual images:
+
+Required Images:
+- S-400 Air Defense System: s400.png (recommended: 200x200px)
+- Military Drones: drone.png (recommended: 200x200px)
+- Autonomous Ground Vehicles: autonomous.png (recommended: 200x200px)
+- Radar Systems: radar.png (recommended: 200x200px)
+- Brahmos Missile System: brahmos.png (recommended: 200x200px)
+- Power Grid Stations: power_station.png (recommended: 200x200px)
+- PLC Controllers: plc.png (recommended: 100x100px)
+- RTU Units: rtu.png (recommended: 100x100px)
+
+Image sources:
+- Use official defense ministry images (public domain)
+- High-resolution technical diagrams
+- Satellite imagery for power stations
+- Stock photos of industrial equipment
+
+Location: /root/OT-SCADA-Simulation/static/images/
+Update icon references in: static/js/main.js (lines 676-697)
+

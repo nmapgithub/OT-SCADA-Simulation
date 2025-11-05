@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ot-scada-simulation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ot-scada-sim
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for development (hot reload)
+      - ./main.py:/app/main.py
+      - ./firewall_engine.py:/app/firewall_engine.py
+      - ./scada_engine.py:/app/scada_engine.py
+      - ./device_manager.py:/app/device_manager.py
+      - ./static:/app/static
+      - ./templates:/app/templates
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - ot-scada-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/devices"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  ot-scada-network:
+    driver: bridge
+
+# Optional: Add volume for persistent data if needed
+# volumes:
+#   scada-data:
+

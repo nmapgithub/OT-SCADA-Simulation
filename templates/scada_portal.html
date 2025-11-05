@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCADA Control Portal</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>⚡ SCADA Control Portal</h1>
+                <div class="header-controls">
+                    <span class="status-indicator" id="connection-status">Connected</span>
+                    <button class="btn btn-secondary" onclick="window.location.href='/'">Main Menu</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='/#map'">Network Map</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Grid Status -->
+            <div class="grid-status-card">
+                <h3>Power Grid Status</h3>
+                <div id="grid-status" class="grid-metrics"></div>
+            </div>
+
+            <!-- SCADA Devices -->
+            <div class="devices-section">
+                <h3>SCADA Devices</h3>
+                <div id="scada-devices" class="devices-grid"></div>
+            </div>
+
+            <!-- Device Control Panel -->
+            <div id="device-control-panel" class="control-panel" style="display: none;">
+                <h3>Device Control</h3>
+                <div id="device-control-content"></div>
+            </div>
+        </main>
+
+        <!-- Device Detail Modal -->
+        <div id="device-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDeviceModal()">&times;</span>
+                <div id="device-modal-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/scada_portal.js"></script>
+</body>
+</html>
+

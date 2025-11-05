@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+/tmp/
+nohup.out
+
+# Documentation (optional - uncomment if you don't want to include)
+# README.md
+# *.md
+
+# Test files
+test_*.py
+*_test.py
+
+# Images backup folder
+static/images/images-req/
+
+# Other
+.env
+.env.local
+
