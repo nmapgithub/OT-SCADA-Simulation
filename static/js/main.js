@@ -556,6 +556,19 @@ let markers = {};
 let powerLines = [];
 let gridRadiusCircle = null;
 let droneRadiusCircles = [];
+let s400CoverageCircles = [];
+let radarCoverageCircles = [];
+let missileRangeCircles = [];
+let securityZones = [];
+let threatIndicators = [];
+let borderLines = [];
+let operationalZones = [];
+let layerGroups = {
+    power: null,
+    military: null,
+    network: null,
+    zones: null
+};
 
 async function loadMap() {
     try {
@@ -582,7 +595,7 @@ function displayMap(stations, connections) {
         }).addTo(map);
     }
     
-    // Clear existing markers, power lines, grid radius, and drone radius circles
+    // Clear existing markers, power lines, and all overlays
     Object.values(markers).forEach(marker => map.removeLayer(marker));
     powerLines.forEach(line => map.removeLayer(line));
     if (gridRadiusCircle) {
@@ -590,7 +603,21 @@ function displayMap(stations, connections) {
         gridRadiusCircle = null;
     }
     droneRadiusCircles.forEach(circle => map.removeLayer(circle));
+    s400CoverageCircles.forEach(circle => map.removeLayer(circle));
+    radarCoverageCircles.forEach(circle => map.removeLayer(circle));
+    missileRangeCircles.forEach(circle => map.removeLayer(circle));
+    securityZones.forEach(zone => map.removeLayer(zone));
+    threatIndicators.forEach(indicator => map.removeLayer(indicator));
+    borderLines.forEach(line => map.removeLayer(line));
+    operationalZones.forEach(zone => map.removeLayer(zone));
     droneRadiusCircles = [];
+    s400CoverageCircles = [];
+    radarCoverageCircles = [];
+    missileRangeCircles = [];
+    securityZones = [];
+    threatIndicators = [];
+    borderLines = [];
+    operationalZones = [];
     markers = {};
     powerLines = [];
     
@@ -653,6 +680,232 @@ function displayMap(stations, connections) {
         `);
         
         droneRadiusCircles.push(droneCircle);
+    });
+    
+    // 1. MILITARY DEFENSE ZONES
+    // S-400 Air Defense Coverage Zones (400km radius)
+    const s400Stations = stations.filter(s => s.type === 'S400' && s.location && s.location.lat);
+    s400Stations.forEach(s400 => {
+        const s400Circle = L.circle([s400.location.lat, s400.location.lon], {
+            radius: 400000, // 400 km
+            color: '#ff00ff', // Magenta for air defense
+            fillColor: '#ff00ff',
+            fillOpacity: 0.08,
+            weight: 3,
+            dashArray: '25, 15, 5, 15',
+            opacity: 0.9
+        }).addTo(map);
+        s400Circle.bindPopup(`
+            <div style="min-width: 220px;">
+                <h3 style="margin: 0 0 10px 0; color: #ff00ff;">🛡️ S-400 Air Defense Zone</h3>
+                <p style="margin: 5px 0;"><b>System:</b> ${s400.name}</p>
+                <p style="margin: 5px 0;"><b>Coverage Radius:</b> 400 km</p>
+                <p style="margin: 5px 0; color: #ff00ff;"><b>⚠️ AIR DEFENSE COVERAGE</b></p>
+            </div>
+        `);
+        s400CoverageCircles.push(s400Circle);
+    });
+    
+    // Radar Coverage Zones (200km radius)
+    const radarStations = stations.filter(s => s.type === 'RADAR' && s.location && s.location.lat);
+    radarStations.forEach(radar => {
+        const radarCircle = L.circle([radar.location.lat, radar.location.lon], {
+            radius: 200000, // 200 km
+            color: '#00ffff', // Cyan for radar
+            fillColor: '#00ffff',
+            fillOpacity: 0.1,
+            weight: 2,
+            dashArray: '15, 10, 3, 10',
+            opacity: 0.85
+        }).addTo(map);
+        radarCircle.bindPopup(`
+            <div style="min-width: 220px;">
+                <h3 style="margin: 0 0 10px 0; color: #00ffff;">📡 Radar Coverage Zone</h3>
+                <p style="margin: 5px 0;"><b>System:</b> ${radar.name}</p>
+                <p style="margin: 5px 0;"><b>Coverage Radius:</b> 200 km</p>
+                <p style="margin: 5px 0; color: #00ffff;"><b>⚠️ ACTIVE RADAR SURVEILLANCE</b></p>
+            </div>
+        `);
+        radarCoverageCircles.push(radarCircle);
+    });
+    
+    // Missile System Range Circles (300km radius)
+    const missileStations = stations.filter(s => s.type === 'MISSILE' && s.location && s.location.lat);
+    missileStations.forEach(missile => {
+        const missileCircle = L.circle([missile.location.lat, missile.location.lon], {
+            radius: 300000, // 300 km
+            color: '#ff6600', // Orange for missile range
+            fillColor: '#ff6600',
+            fillOpacity: 0.12,
+            weight: 3,
+            dashArray: '20, 10, 5, 10',
+            opacity: 0.9
+        }).addTo(map);
+        missileCircle.bindPopup(`
+            <div style="min-width: 220px;">
+                <h3 style="margin: 0 0 10px 0; color: #ff6600;">🚀 Missile Range Zone</h3>
+                <p style="margin: 5px 0;"><b>System:</b> ${missile.name}</p>
+                <p style="margin: 5px 0;"><b>Range:</b> 300 km</p>
+                <p style="margin: 5px 0; color: #ff6600;"><b>⚠️ MISSILE COVERAGE AREA</b></p>
+            </div>
+        `);
+        missileRangeCircles.push(missileCircle);
+    });
+    
+    // Defense Perimeter Line (India-Pakistan border approximation)
+    const borderCoordinates = [
+        [32.0, 74.5], [32.2, 74.6], [32.4, 74.7], [32.6, 74.8],
+        [32.8, 74.9], [33.0, 75.0], [33.2, 75.1], [33.4, 75.2],
+        [33.6, 75.3], [33.8, 75.4], [34.0, 75.5], [34.2, 75.6]
+    ];
+    const borderLine = L.polyline(borderCoordinates, {
+        color: '#ff0000',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '10, 5'
+    }).addTo(map);
+    borderLine.bindPopup('<b>🇮🇳 Defense Perimeter Line</b><br>India-Pakistan Border Region');
+    borderLines.push(borderLine);
+    
+    // 2. SECURITY ZONES
+    // High Security Zones around critical infrastructure
+    const criticalStations = stations.filter(s => 
+        ['power_station', 'SCADA_SERVER', 'MISSILE', 'S400'].includes(s.type) && s.location && s.location.lat
+    );
+    criticalStations.forEach(station => {
+        const securityZone = L.circle([station.location.lat, station.location.lon], {
+            radius: 10000, // 10 km security perimeter
+            color: '#ff0000',
+            fillColor: '#ff0000',
+            fillOpacity: 0.15,
+            weight: 2,
+            dashArray: '5, 5'
+        }).addTo(map);
+        securityZones.push(securityZone);
+    });
+    
+    // 3. THREAT INDICATORS (simulated)
+    const threatLocations = [
+        {lat: 32.5, lon: 75.0, type: 'suspicious_activity'},
+        {lat: 33.0, lon: 74.8, type: 'network_scan'}
+    ];
+    threatLocations.forEach(threat => {
+        const threatIcon = L.divIcon({
+            className: 'threat-indicator',
+            html: '<div style="background: #ff0000; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; animation: pulse 2s infinite;"></div>',
+            iconSize: [20, 20]
+        });
+        const threatMarker = L.marker([threat.lat, threat.lon], {icon: threatIcon}).addTo(map);
+        threatMarker.bindPopup(`
+            <div style="min-width: 200px;">
+                <h3 style="color: #ff0000;">⚠️ THREAT DETECTED</h3>
+                <p><b>Type:</b> ${threat.type.replace('_', ' ').toUpperCase()}</p>
+                <p><b>Status:</b> Under Investigation</p>
+            </div>
+        `);
+        threatIndicators.push(threatMarker);
+    });
+    
+    // 4. OPERATIONAL ZONES
+    // Emergency Response Zones
+    const emergencyZones = [
+        {center: [32.7266, 74.8570], name: 'Jammu Emergency Zone', radius: 25000},
+        {center: [34.0837, 74.7973], name: 'Srinagar Emergency Zone', radius: 25000}
+    ];
+    emergencyZones.forEach(zone => {
+        const emergencyZone = L.circle(zone.center, {
+            radius: zone.radius,
+            color: '#ffff00',
+            fillColor: '#ffff00',
+            fillOpacity: 0.1,
+            weight: 2,
+            dashArray: '8, 4'
+        }).addTo(map);
+        emergencyZone.bindPopup(`<b>🚨 ${zone.name}</b><br>Emergency Response Zone`);
+        operationalZones.push(emergencyZone);
+    });
+    
+    // Maintenance Zones
+    const maintenanceZones = [
+        {center: [32.2643, 75.6421], name: 'Pathankot Maintenance Zone', radius: 15000}
+    ];
+    maintenanceZones.forEach(zone => {
+        const maintZone = L.circle(zone.center, {
+            radius: zone.radius,
+            color: '#ff8800',
+            fillColor: '#ff8800',
+            fillOpacity: 0.1,
+            weight: 2,
+            dashArray: '6, 6'
+        }).addTo(map);
+        maintZone.bindPopup(`<b>🔧 ${zone.name}</b><br>Scheduled Maintenance`);
+        operationalZones.push(maintZone);
+    });
+    
+    // 5. DATA VISUALIZATION - Network Traffic Flow (animated arrows)
+    // Add animated connection indicators for active connections
+    connections.forEach(conn => {
+        const fromStation = stations.find(s => s.id === conn.from);
+        const toStation = stations.find(s => s.id === conn.to);
+        
+        if (fromStation && toStation && fromStation.location && toStation.location && 
+            fromStation.location.lat && toStation.location.lat) {
+            // Add midpoint marker for traffic flow visualization
+            const midLat = (fromStation.location.lat + toStation.location.lat) / 2;
+            const midLon = (fromStation.location.lon + toStation.location.lon) / 2;
+            
+            if (conn.type === 'military_connection' || conn.type === 'network_connection') {
+                const trafficIcon = L.divIcon({
+                    className: 'traffic-indicator',
+                    html: `<div style="
+                        background: ${conn.type === 'military_connection' ? '#0066ff' : '#00ff88'};
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                        border: 2px solid #fff;
+                        animation: pulse 1.5s infinite;
+                        box-shadow: 0 0 10px ${conn.type === 'military_connection' ? '#0066ff' : '#00ff88'};
+                    "></div>`,
+                    iconSize: [12, 12]
+                });
+                const trafficMarker = L.marker([midLat, midLon], {icon: trafficIcon}).addTo(map);
+                trafficMarker.bindPopup(`<b>📡 Active Connection</b><br>${fromStation.name} ↔ ${toStation.name}`);
+            }
+        }
+    });
+    
+    // 6. DATA VISUALIZATION - Device Health Status Overlay
+    // Add health status indicators based on device metrics
+    stations.forEach(station => {
+        if (!station.location || !station.location.lat) return;
+        
+        // Calculate health score (simplified)
+        let healthScore = 100;
+        if (station.status === 'offline') healthScore = 0;
+        else if (station.metrics) {
+            if (station.metrics.load > 0.9) healthScore -= 20;
+            if (station.metrics.voltage && (station.metrics.voltage < 200 || station.metrics.voltage > 250)) healthScore -= 15;
+        }
+        
+        // Add health indicator circle
+        if (healthScore < 70) {
+            const healthIndicator = L.circle([station.location.lat, station.location.lon], {
+                radius: 5000, // 5 km
+                color: healthScore < 50 ? '#ff0000' : '#ff8800',
+                fillColor: healthScore < 50 ? '#ff0000' : '#ff8800',
+                fillOpacity: 0.2,
+                weight: 2,
+                dashArray: '3, 3'
+            }).addTo(map);
+            healthIndicator.bindPopup(`
+                <div style="min-width: 180px;">
+                    <h3 style="color: ${healthScore < 50 ? '#ff0000' : '#ff8800'};">⚠️ Health Alert</h3>
+                    <p><b>Device:</b> ${station.name}</p>
+                    <p><b>Health Score:</b> ${healthScore}%</p>
+                    <p><b>Status:</b> ${healthScore < 50 ? 'CRITICAL' : 'WARNING'}</p>
+                </div>
+            `);
+        }
     });
     
     // Draw connections (power grid and military)
@@ -749,9 +1002,40 @@ function displayMap(stations, connections) {
             className: 'military-equipment-icon'
         });
         
-        const marker = L.marker([station.location.lat, station.location.lon], {
-            icon: customIcon
-        }).addTo(map);
+        // Add real-time status indicator (pulsing effect for online devices)
+        let markerElement;
+        if (station.status === 'online') {
+            // Create pulsing status indicator
+            const statusIndicator = L.divIcon({
+                className: 'status-indicator-pulse',
+                html: `<div class="pulse-ring" style="
+                    position: absolute;
+                    width: 30px;
+                    height: 30px;
+                    border: 3px solid ${station.type === 'MISSILE' || station.type === 'S400' ? '#ff0000' : '#00ff00'};
+                    border-radius: 50%;
+                    animation: pulse 2s infinite;
+                    top: -15px;
+                    left: -15px;
+                "></div>`,
+                iconSize: [0, 0],
+                iconAnchor: [0, 0]
+            });
+            markerElement = L.marker([station.location.lat, station.location.lon], {
+                icon: customIcon
+            }).addTo(map);
+            // Add pulsing indicator
+            L.marker([station.location.lat, station.location.lon], {
+                icon: statusIndicator,
+                zIndexOffset: -1000
+            }).addTo(map);
+        } else {
+            markerElement = L.marker([station.location.lat, station.location.lon], {
+                icon: customIcon
+            }).addTo(map);
+        }
+        
+        const marker = markerElement;
         
         // Add popup with device information
         let popupContent = `
@@ -833,6 +1117,83 @@ function toggleDroneRadius() {
             map.addLayer(circle);
         } else {
             map.removeLayer(circle);
+        }
+    });
+}
+
+function toggleS400Coverage() {
+    const toggle = document.getElementById('s400-coverage-toggle');
+    s400CoverageCircles.forEach(circle => {
+        if (toggle.checked) {
+            map.addLayer(circle);
+        } else {
+            map.removeLayer(circle);
+        }
+    });
+}
+
+function toggleRadarCoverage() {
+    const toggle = document.getElementById('radar-coverage-toggle');
+    radarCoverageCircles.forEach(circle => {
+        if (toggle.checked) {
+            map.addLayer(circle);
+        } else {
+            map.removeLayer(circle);
+        }
+    });
+}
+
+function toggleMissileRange() {
+    const toggle = document.getElementById('missile-range-toggle');
+    missileRangeCircles.forEach(circle => {
+        if (toggle.checked) {
+            map.addLayer(circle);
+        } else {
+            map.removeLayer(circle);
+        }
+    });
+}
+
+function toggleSecurityZones() {
+    const toggle = document.getElementById('security-zones-toggle');
+    securityZones.forEach(zone => {
+        if (toggle.checked) {
+            map.addLayer(zone);
+        } else {
+            map.removeLayer(zone);
+        }
+    });
+}
+
+function toggleThreatIndicators() {
+    const toggle = document.getElementById('threat-indicators-toggle');
+    threatIndicators.forEach(indicator => {
+        if (toggle.checked) {
+            map.addLayer(indicator);
+        } else {
+            map.removeLayer(indicator);
+        }
+    });
+}
+
+function toggleBorderLines() {
+    const toggle = document.getElementById('border-lines-toggle');
+    borderLines.forEach(line => {
+        if (toggle.checked) {
+            map.addLayer(line);
+        } else {
+            map.removeLayer(line);
+        }
+    });
+}
+
+function toggleOperationalZones() {
+    const toggle = document.getElementById('operational-zones-toggle');
+    operationalZones.forEach(zone => {
+        if (toggle.checked) {
+            map.addLayer(zone);
+        } else {
+            map.removeLayer(zone);
         }
     });
 }

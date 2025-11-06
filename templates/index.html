@@ -110,15 +110,55 @@
                 <div class="panel-header">
                     <h2>Geographic Map - India (Jammu & Kashmir Region)</h2>
                     <div class="panel-controls">
-                        <label class="toggle" style="margin-right: 1rem;">
-                            <input type="checkbox" id="grid-radius-toggle" checked onchange="toggleGridRadius()">
-                            <span>Show Grid Radius</span>
-                        </label>
-                        <label class="toggle" style="margin-right: 1rem;">
-                            <input type="checkbox" id="drone-radius-toggle" checked onchange="toggleDroneRadius()">
-                            <span>Show Drone Activity Zones</span>
-                        </label>
                         <span style="color: #888; font-size: 0.9rem;">OpenStreetMap View - Power Grid Stations & Missile Systems</span>
+                    </div>
+                </div>
+                <!-- Layer Control Panel -->
+                <div style="background: #1a1a1a; padding: 15px; border-bottom: 1px solid #333; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <h3 style="color: #00d4ff; margin: 0 0 10px 0; font-size: 0.9rem;">🛡️ Defense Zones</h3>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="s400-coverage-toggle" checked onchange="toggleS400Coverage()">
+                            <span>S-400 Coverage (400km)</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="radar-coverage-toggle" checked onchange="toggleRadarCoverage()">
+                            <span>Radar Coverage (200km)</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="missile-range-toggle" checked onchange="toggleMissileRange()">
+                            <span>Missile Range (300km)</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="drone-radius-toggle" checked onchange="toggleDroneRadius()">
+                            <span>Drone Zones (50km)</span>
+                        </label>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <h3 style="color: #00d4ff; margin: 0 0 10px 0; font-size: 0.9rem;">🔒 Security & Threats</h3>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="security-zones-toggle" checked onchange="toggleSecurityZones()">
+                            <span>Security Zones</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="threat-indicators-toggle" checked onchange="toggleThreatIndicators()">
+                            <span>Threat Indicators</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="border-lines-toggle" checked onchange="toggleBorderLines()">
+                            <span>Border Lines</span>
+                        </label>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <h3 style="color: #00d4ff; margin: 0 0 10px 0; font-size: 0.9rem;">⚙️ Operations</h3>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="grid-radius-toggle" checked onchange="toggleGridRadius()">
+                            <span>Grid Radius (120km)</span>
+                        </label>
+                        <label class="toggle" style="display: block; margin: 5px 0;">
+                            <input type="checkbox" id="operational-zones-toggle" checked onchange="toggleOperationalZones()">
+                            <span>Operational Zones</span>
+                        </label>
                     </div>
                 </div>
                 <div class="map-container">
