@@ -554,6 +554,8 @@ function setLoad() {
 let map = null;
 let markers = {};
 let powerLines = [];
+let gridRadiusCircle = null;
+let droneRadiusCircles = [];
 
 async function loadMap() {
     try {
@@ -580,11 +582,78 @@ function displayMap(stations, connections) {
         }).addTo(map);
     }
     
-    // Clear existing markers and power lines
+    // Clear existing markers, power lines, grid radius, and drone radius circles
     Object.values(markers).forEach(marker => map.removeLayer(marker));
     powerLines.forEach(line => map.removeLayer(line));
+    if (gridRadiusCircle) {
+        map.removeLayer(gridRadiusCircle);
+        gridRadiusCircle = null;
+    }
+    droneRadiusCircles.forEach(circle => map.removeLayer(circle));
+    droneRadiusCircles = [];
     markers = {};
     powerLines = [];
+    
+    // Add grid radius circle overlay covering Jammu & Kashmir region
+    // Center: Jammu region (32.7266, 74.8570)
+    // Radius: ~120 km to cover all stations including missile systems
+    const gridCenter = [32.7266, 74.8570];
+    const gridRadiusMeters = 120000; // 120 km in meters
+    
+    gridRadiusCircle = L.circle(gridCenter, {
+        radius: gridRadiusMeters,
+        color: '#ff4444',
+        fillColor: '#ff4444',
+        fillOpacity: 0.15,
+        weight: 3,
+        dashArray: '10, 5',
+        opacity: 0.8
+    }).addTo(map);
+    
+    // Add popup to grid radius circle
+    gridRadiusCircle.bindPopup(`
+        <div style="min-width: 200px;">
+            <h3 style="margin: 0 0 10px 0; color: #ff4444;">Network Grid Coverage Area</h3>
+            <p style="margin: 5px 0;"><b>Radius:</b> 120 km</p>
+            <p style="margin: 5px 0;"><b>Coverage:</b> Jammu & Kashmir Region</p>
+            <p style="margin: 5px 0;"><b>Includes:</b> Power Stations, Military Assets, Missile Systems</p>
+            <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL INFRASTRUCTURE ZONE</b></p>
+        </div>
+    `);
+    
+    // Add drone activity radius circles (military-style)
+    const droneStations = stations.filter(s => s.type === 'DRONE' && s.location && s.location.lat);
+    droneStations.forEach(drone => {
+        // Military-style radius circle for drone activity zone
+        // Radius: 50 km operational range
+        const droneRadiusMeters = 50000; // 50 km in meters
+        
+        const droneCircle = L.circle([drone.location.lat, drone.location.lon], {
+            radius: droneRadiusMeters,
+            color: '#0066ff', // Military blue
+            fillColor: '#0066ff',
+            fillOpacity: 0.1, // Very light fill
+            weight: 2,
+            dashArray: '20, 10, 5, 10', // Military-style dashed pattern
+            opacity: 0.9,
+            className: 'drone-activity-zone'
+        }).addTo(map);
+        
+        // Add military-style popup
+        droneCircle.bindPopup(`
+            <div style="min-width: 220px;">
+                <h3 style="margin: 0 0 10px 0; color: #0066ff;">🚁 Drone Activity Zone</h3>
+                <p style="margin: 5px 0;"><b>Drone:</b> ${drone.name}</p>
+                <p style="margin: 5px 0;"><b>Operational Radius:</b> 50 km</p>
+                <p style="margin: 5px 0;"><b>Status:</b> <span style="color: ${drone.status === 'online' ? '#34a853' : '#ea4335'}">${drone.status.toUpperCase()}</span></p>
+                <p style="margin: 5px 0;"><b>Type:</b> ${drone.city || 'Military Air Base'}</p>
+                <p style="margin: 5px 0; color: #0066ff;"><b>⚠️ ACTIVE SURVEILLANCE ZONE</b></p>
+                <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ RESTRICTED AIRSPACE</b></p>
+            </div>
+        `);
+        
+        droneRadiusCircles.push(droneCircle);
+    });
     
     // Draw connections (power grid and military)
     connections.forEach(conn => {
@@ -692,12 +761,33 @@ function displayMap(stations, connections) {
                 <p style="margin: 5px 0;"><b>Status:</b> <span style="color: ${station.status === 'online' ? '#34a853' : '#ea4335'}">${station.status.toUpperCase()}</span></p>
                 ${station.city ? `<p style="margin: 5px 0;"><b>Location:</b> ${station.city}</p>` : ''}`;
         
-        // Add military-specific metrics
+        // Add military-specific metrics (including missile systems)
         if (['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(station.type)) {
-            popupContent += `
-                ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
-                ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
-                <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET</b></p>`;
+            // Special handling for missile systems
+            if (station.type === 'MISSILE') {
+                popupContent += `
+                    <p style="margin: 5px 0; color: #ff4444;"><b>🚀 MISSILE SYSTEM</b></p>
+                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
+                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
+                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET - MISSILE SYSTEM</b></p>
+                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ WITHIN GRID RADIUS COVERAGE</b></p>`;
+            } else if (station.type === 'DRONE') {
+                // Special handling for drones with activity zones
+                popupContent += `
+                    <p style="margin: 5px 0; color: #0066ff;"><b>🚁 DRONE UNIT</b></p>
+                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
+                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
+                    <p style="margin: 5px 0; color: #0066ff;"><b>📡 Activity Zone: 50 km radius</b></p>
+                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET</b></p>
+                    <p style="margin: 5px 0; color: #0066ff;"><b>⚠️ ACTIVE SURVEILLANCE ZONE</b></p>
+                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ RESTRICTED AIRSPACE</b></p>`;
+            } else {
+                popupContent += `
+                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
+                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
+                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET</b></p>
+                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ WITHIN GRID RADIUS COVERAGE</b></p>`;
+            }
         } else {
             // Regular SCADA metrics
             popupContent += `
@@ -722,6 +812,28 @@ function displayMap(stations, connections) {
         
         marker.bindPopup(popupContent);
         markers[station.id] = marker;
+    });
+}
+
+function toggleGridRadius() {
+    const toggle = document.getElementById('grid-radius-toggle');
+    if (gridRadiusCircle) {
+        if (toggle.checked) {
+            map.addLayer(gridRadiusCircle);
+        } else {
+            map.removeLayer(gridRadiusCircle);
+        }
+    }
+}
+
+function toggleDroneRadius() {
+    const toggle = document.getElementById('drone-radius-toggle');
+    droneRadiusCircles.forEach(circle => {
+        if (toggle.checked) {
+            map.addLayer(circle);
+        } else {
+            map.removeLayer(circle);
+        }
     });
 }
 

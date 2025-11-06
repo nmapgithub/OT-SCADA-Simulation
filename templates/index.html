@@ -110,7 +110,15 @@
                 <div class="panel-header">
                     <h2>Geographic Map - India (Jammu & Kashmir Region)</h2>
                     <div class="panel-controls">
-                        <span style="color: #888; font-size: 0.9rem;">OpenStreetMap View - Power Grid Stations</span>
+                        <label class="toggle" style="margin-right: 1rem;">
+                            <input type="checkbox" id="grid-radius-toggle" checked onchange="toggleGridRadius()">
+                            <span>Show Grid Radius</span>
+                        </label>
+                        <label class="toggle" style="margin-right: 1rem;">
+                            <input type="checkbox" id="drone-radius-toggle" checked onchange="toggleDroneRadius()">
+                            <span>Show Drone Activity Zones</span>
+                        </label>
+                        <span style="color: #888; font-size: 0.9rem;">OpenStreetMap View - Power Grid Stations & Missile Systems</span>
                     </div>
                 </div>
                 <div class="map-container">

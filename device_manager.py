@@ -93,18 +93,31 @@ class DeviceManager:
         # Add SCADA devices
         for device in self.scada.devices.values():
             if "location" in device:
-                stations.append({
+                station_data = {
                     "id": device["id"],
                     "name": device["name"],
                     "type": device["type"],
                     "location": device["location"],
-                    "status": device["status"],
-                    "metrics": {
+                    "status": device["status"]
+                }
+                
+                # Add military-specific fields for missile systems and other military equipment
+                if device.get("type") in ["S400", "DRONE", "AUTONOMOUS", "RADAR", "MISSILE"]:
+                    station_data["power_status"] = device.get("power_status")
+                    station_data["readiness"] = device.get("readiness")
+                    if "city" in device:
+                        station_data["city"] = device["city"]
+                else:
+                    # Regular SCADA metrics
+                    station_data["metrics"] = {
                         "voltage": device.get("voltage", 0),
                         "load": device.get("load", 0),
                         "temperature": device.get("temperature", 0)
                     }
-                })
+                    if "city" in device:
+                        station_data["city"] = device["city"]
+                
+                stations.append(station_data)
         
         # Add network devices
         for device in self.network_devices.values():
