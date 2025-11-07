@@ -1,0 +1,10 @@
+{
+  "description": "Place pre-rendered XYZ tiles in this directory to enable offline basemap rendering.",
+  "coverage_note": "Tiles should follow the /{z}/{x}/{y}.png scheme. Populate this cache while online using the provided scripts/cache_tiles.py helper.",
+  "sample_tile": {
+    "z": 8,
+    "x": 170,
+    "y": 105
+  }
+}
+
