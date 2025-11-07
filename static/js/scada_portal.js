@@ -62,6 +62,43 @@ function displayGridStatus(gridStatus) {
     document.getElementById('grid-status').innerHTML = gridHtml;
 }
 
+// Convert military device names to power grid station names
+function convertToPowerStationName(device) {
+    const deviceName = device.name || '';
+    const deviceType = device.type || '';
+    const city = device.city || '';
+    
+    // Convert military device types to power grid stations
+    if (['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(deviceType)) {
+        // Use city information if available
+        if (city) {
+            if (city.includes('Jammu')) {
+                return 'Jammu Power Grid Station';
+            } else if (city.includes('Srinagar')) {
+                return 'Srinagar Power Grid Station';
+            } else if (city.includes('Pathankot')) {
+                return 'Pathankot Power Grid Station';
+            }
+        }
+        
+        // Fallback to name-based conversion
+        if (deviceName.includes('Alpha')) {
+            return 'Power Grid Station Alpha';
+        } else if (deviceName.includes('Bravo')) {
+            return 'Power Grid Station Bravo';
+        } else if (deviceName.includes('Jammu')) {
+            return 'Jammu Power Grid Station';
+        } else if (deviceName.includes('Srinagar')) {
+            return 'Srinagar Power Grid Station';
+        } else if (deviceName.includes('Pathankot')) {
+            return 'Pathankot Power Grid Station';
+        } else {
+            return 'Power Grid Station';
+        }
+    }
+    return deviceName;
+}
+
 function displaySCADADevices(devices) {
     const container = document.getElementById('scada-devices');
     container.innerHTML = '';
@@ -71,9 +108,13 @@ function displaySCADADevices(devices) {
         card.className = 'device-card';
         card.onclick = () => showDeviceDetails(device);
         
+        // Convert device name for display
+        const displayName = convertToPowerStationName(device);
+        const displayType = ['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(device.type) ? 'POWER_STATION' : device.type;
+        
         card.innerHTML = `
-            <h4>${device.name}</h4>
-            <div class="device-type">${device.type}</div>
+            <h4>${displayName}</h4>
+            <div class="device-type">${displayType}</div>
             <div class="device-metrics">
                 <div class="metric-row">
                     <span>Status:</span>
@@ -105,11 +146,15 @@ function showDeviceDetails(device) {
     const modal = document.getElementById('device-modal');
     const content = document.getElementById('device-modal-content');
     
+    // Convert device name and type for display
+    const displayName = convertToPowerStationName(device);
+    const displayType = ['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(device.type) ? 'POWER_STATION' : device.type;
+    
     content.innerHTML = `
-        <h2>${device.name}</h2>
+        <h2>${displayName}</h2>
         <div class="device-info">
             <div class="info-item">
-                <strong>Type:</strong> ${device.type}
+                <strong>Type:</strong> ${displayType}
             </div>
             <div class="info-item">
                 <strong>Status:</strong> <span style="color: ${device.status === 'online' ? '#00ff88' : '#ff4444'}">${device.status.toUpperCase()}</span>

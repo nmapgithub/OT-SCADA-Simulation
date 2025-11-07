@@ -385,6 +385,43 @@ function displayGridStatus(gridStatus) {
     document.getElementById('grid-status').innerHTML = gridHtml;
 }
 
+// Convert military device names to power grid station names
+function convertToPowerStationName(device) {
+    const deviceName = device.name || '';
+    const deviceType = device.type || '';
+    const city = device.city || '';
+    
+    // Convert military device types to power grid stations
+    if (['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(deviceType)) {
+        // Use city information if available
+        if (city) {
+            if (city.includes('Jammu')) {
+                return 'Jammu Power Grid Station';
+            } else if (city.includes('Srinagar')) {
+                return 'Srinagar Power Grid Station';
+            } else if (city.includes('Pathankot')) {
+                return 'Pathankot Power Grid Station';
+            }
+        }
+        
+        // Fallback to name-based conversion
+        if (deviceName.includes('Alpha')) {
+            return 'Power Grid Station Alpha';
+        } else if (deviceName.includes('Bravo')) {
+            return 'Power Grid Station Bravo';
+        } else if (deviceName.includes('Jammu')) {
+            return 'Jammu Power Grid Station';
+        } else if (deviceName.includes('Srinagar')) {
+            return 'Srinagar Power Grid Station';
+        } else if (deviceName.includes('Pathankot')) {
+            return 'Pathankot Power Grid Station';
+        } else {
+            return 'Power Grid Station';
+        }
+    }
+    return deviceName;
+}
+
 function displaySCADADevices(devices) {
     const container = document.getElementById('scada-devices');
     container.innerHTML = '';
@@ -394,9 +431,13 @@ function displaySCADADevices(devices) {
         card.className = 'device-card';
         card.onclick = () => showDeviceDetails(device);
         
+        // Convert device name for display
+        const displayName = convertToPowerStationName(device);
+        const displayType = ['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(device.type) ? 'POWER_STATION' : device.type;
+        
         card.innerHTML = `
-            <h4>${device.name}</h4>
-            <div class="device-type">${device.type}</div>
+            <h4>${displayName}</h4>
+            <div class="device-type">${displayType}</div>
             <div class="device-metrics">
                 <div class="metric-row">
                     <span>Status:</span>
@@ -433,11 +474,15 @@ function showDeviceDetails(device) {
     const modal = document.getElementById('device-modal');
     const content = document.getElementById('device-modal-content');
     
+    // Convert device name and type for display
+    const displayName = convertToPowerStationName(device);
+    const displayType = ['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(device.type) ? 'POWER_STATION' : device.type;
+    
     content.innerHTML = `
-        <h2>${device.name}</h2>
+        <h2>${displayName}</h2>
         <div class="device-info">
             <div class="info-item">
-                <strong>Type:</strong> ${device.type}
+                <strong>Type:</strong> ${displayType}
             </div>
             <div class="info-item">
                 <strong>Status:</strong> <span style="color: ${device.status === 'online' ? '#00ff88' : '#ff4444'}">${device.status.toUpperCase()}</span>
@@ -643,7 +688,7 @@ function displayMap(stations, connections) {
             <h3 style="margin: 0 0 10px 0; color: #ff4444;">Network Grid Coverage Area</h3>
             <p style="margin: 5px 0;"><b>Radius:</b> 120 km</p>
             <p style="margin: 5px 0;"><b>Coverage:</b> Jammu & Kashmir Region</p>
-            <p style="margin: 5px 0;"><b>Includes:</b> Power Stations, Military Assets, Missile Systems</p>
+            <p style="margin: 5px 0;"><b>Includes:</b> Power Grid Stations</p>
             <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL INFRASTRUCTURE ZONE</b></p>
         </div>
     `);
@@ -966,40 +1011,27 @@ function displayMap(stations, connections) {
         const iconColor = station.status === 'online' ? '#34a853' : '#ea4335';
         let iconSymbol;
         
-        // Military equipment icons
+        // Power grid station icons - all stations use power station icon
         // Use real images for icons - larger size for projector visibility
         let iconImage = '/static/images/power_station.jpg';
         let iconSize = [80, 80];  // Increased size for projector
         
-        if (station.type === 'S400') {
-            iconImage = '/static/images/s400.jpg';
-            iconSize = [100, 100];  // Larger military equipment icons
-        } else if (station.type === 'DRONE') {
-            iconImage = '/static/images/drone.jpg';
-            iconSize = [100, 100];
-        } else if (station.type === 'AUTONOMOUS') {
-            iconImage = '/static/images/autonomous.jpg';
-            iconSize = [100, 100];
-        } else if (station.type === 'RADAR') {
-            iconImage = '/static/images/radar.jpg';
-            iconSize = [100, 100];
-        } else if (station.type === 'MISSILE') {
-            iconImage = '/static/images/brahmos.jpg';
-            iconSize = [100, 100];
-        } else if (station.type === 'PLC') {
+        // All stations (including former military equipment) now use power station icon
+        if (station.type === 'PLC') {
             iconImage = '/static/images/plc.jpg';
             iconSize = [70, 70];  // Increased industrial equipment
         } else if (station.type === 'RTU') {
             iconImage = '/static/images/rtu.jpg';
             iconSize = [70, 70];
         }
+        // All other types (S400, DRONE, AUTONOMOUS, RADAR, MISSILE, and regular power stations) use power_station.jpg
         
         const customIcon = L.icon({
             iconUrl: iconImage,
             iconSize: iconSize,
             iconAnchor: [iconSize[0]/2, iconSize[1]/2],
             popupAnchor: [0, -iconSize[1]/2],
-            className: 'military-equipment-icon'
+            className: 'power-station-icon'
         });
         
         // Add real-time status indicator (pulsing effect for online devices)
@@ -1045,36 +1077,19 @@ function displayMap(stations, connections) {
                 <p style="margin: 5px 0;"><b>Status:</b> <span style="color: ${station.status === 'online' ? '#34a853' : '#ea4335'}">${station.status.toUpperCase()}</span></p>
                 ${station.city ? `<p style="margin: 5px 0;"><b>Location:</b> ${station.city}</p>` : ''}`;
         
-        // Add military-specific metrics (including missile systems)
+        // Add power grid station metrics
         if (['S400', 'DRONE', 'AUTONOMOUS', 'RADAR', 'MISSILE'].includes(station.type)) {
-            // Special handling for missile systems
-            if (station.type === 'MISSILE') {
-                popupContent += `
-                    <p style="margin: 5px 0; color: #ff4444;"><b>🚀 MISSILE SYSTEM</b></p>
-                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
-                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
-                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET - MISSILE SYSTEM</b></p>
-                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ WITHIN GRID RADIUS COVERAGE</b></p>`;
-            } else if (station.type === 'DRONE') {
-                // Special handling for drones with activity zones
-                popupContent += `
-                    <p style="margin: 5px 0; color: #0066ff;"><b>🚁 DRONE UNIT</b></p>
-                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
-                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
-                    <p style="margin: 5px 0; color: #0066ff;"><b>📡 Activity Zone: 50 km radius</b></p>
-                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET</b></p>
-                    <p style="margin: 5px 0; color: #0066ff;"><b>⚠️ ACTIVE SURVEILLANCE ZONE</b></p>
-                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ RESTRICTED AIRSPACE</b></p>`;
-            } else {
-                popupContent += `
-                    ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
-                    ${station.readiness ? `<p style="margin: 5px 0;"><b>Readiness:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
-                    <p style="margin: 5px 0; color: #ff4444;"><b>⚠️ CRITICAL MILITARY ASSET</b></p>
-                    <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ WITHIN GRID RADIUS COVERAGE</b></p>`;
-            }
+            // Show power station metrics for all types
+            popupContent += `
+                <p style="margin: 5px 0; color: #00d4ff;"><b>⚡ POWER GRID STATION</b></p>
+                ${station.power_status ? `<p style="margin: 5px 0;"><b>Power Status:</b> ${station.power_status}</p>` : ''}
+                ${station.readiness ? `<p style="margin: 5px 0;"><b>Operational Status:</b> ${(station.readiness * 100).toFixed(1)}%</p>` : ''}
+                <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ CRITICAL INFRASTRUCTURE</b></p>
+                <p style="margin: 5px 0; color: #ff8800;"><b>⚠️ WITHIN GRID RADIUS COVERAGE</b></p>`;
         } else {
             // Regular SCADA metrics
             popupContent += `
+                <p style="margin: 5px 0; color: #00d4ff;"><b>⚡ POWER GRID STATION</b></p>
                 ${station.metrics && station.metrics.voltage ? `<p style="margin: 5px 0;"><b>Voltage:</b> ${station.metrics.voltage.toFixed(1)}V</p>` : ''}
                 ${station.metrics && station.metrics.load ? `<p style="margin: 5px 0;"><b>Load:</b> ${(station.metrics.load * 100).toFixed(1)}%</p>` : ''}`;
         }
