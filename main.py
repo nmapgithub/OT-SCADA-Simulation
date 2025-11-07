@@ -11,8 +11,10 @@ from typing import List, Dict, Optional, Any
 from datetime import datetime
 import json
 import uuid
+from pathlib import Path
 
 app = FastAPI(title="OT-SCADA Simulation Platform")
+BASE_DIR = Path(__file__).resolve().parent
 
 # CORS middleware
 app.add_middleware(
@@ -24,7 +26,12 @@ app.add_middleware(
 )
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# Mount offline tiles if available
+tiles_path = BASE_DIR / "tiles"
+if tiles_path.exists():
+    app.mount("/tiles", StaticFiles(directory=str(tiles_path)), name="tiles")
 
 # Import simulation engines
 from firewall_engine import FirewallEngine

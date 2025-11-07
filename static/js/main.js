@@ -614,6 +614,11 @@ let layerGroups = {
     network: null,
     zones: null
 };
+let onlineTileLayer = null;
+let offlineTileLayer = null;
+let usingOfflineTiles = false;
+let tileLayerEventsBound = false;
+let offlineNotificationShown = false;
 
 async function loadMap() {
     try {
@@ -626,19 +631,133 @@ async function loadMap() {
     }
 }
 
+function initializeTileLayers() {
+    if (onlineTileLayer || offlineTileLayer) {
+        return;
+    }
+
+    onlineTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        minZoom: 6,
+        updateWhenIdle: true,
+        detectRetina: true
+    });
+
+    offlineTileLayer = L.tileLayer('/tiles/{z}/{x}/{y}.png', {
+        attribution: 'Offline Map Tiles',
+        maxZoom: 19,
+        maxNativeZoom: 10,
+        minZoom: 6,
+        tileSize: 256,
+        updateWhenIdle: true,
+        keepBuffer: 8,
+        detectRetina: false,
+        noWrap: true
+    });
+
+    onlineTileLayer.on('tileerror', () => {
+        if (!usingOfflineTiles) {
+            console.warn('OpenStreetMap tile load failed. Switching to offline tiles.');
+            useOfflineTiles('tileerror');
+        }
+    });
+}
+
+function useOnlineTiles() {
+    if (!map || !onlineTileLayer) {
+        return;
+    }
+
+    if (!navigator.onLine) {
+        useOfflineTiles('navigator-offline');
+        return;
+    }
+
+    if (offlineTileLayer && map.hasLayer(offlineTileLayer)) {
+        map.removeLayer(offlineTileLayer);
+    }
+
+    if (!map.hasLayer(onlineTileLayer)) {
+        onlineTileLayer.addTo(map);
+    }
+
+    if (usingOfflineTiles) {
+        console.info('Reconnected. Restoring online OpenStreetMap tiles.');
+        if (typeof showNotification === 'function') {
+            showNotification('Reconnected. Using live OpenStreetMap tiles.', 'success');
+        }
+    }
+
+    usingOfflineTiles = false;
+    offlineNotificationShown = false;
+}
+
+function useOfflineTiles(reason = '') {
+    if (!map || !offlineTileLayer) {
+        return;
+    }
+
+    if (onlineTileLayer && map.hasLayer(onlineTileLayer)) {
+        map.removeLayer(onlineTileLayer);
+    }
+
+    if (!map.hasLayer(offlineTileLayer)) {
+        offlineTileLayer.addTo(map);
+    }
+
+    if (!usingOfflineTiles) {
+        const reasonSuffix = reason ? ` (${reason})` : '';
+        console.warn(`Using offline map tiles${reasonSuffix}.`);
+        if (typeof showNotification === 'function' && !offlineNotificationShown) {
+            showNotification('Using offline basemap tiles (no internet connection).', 'warning');
+            offlineNotificationShown = true;
+        }
+    }
+
+    usingOfflineTiles = true;
+}
+
+function setupTileLayers() {
+    if (!map) {
+        return;
+    }
+
+    initializeTileLayers();
+
+    if (!tileLayerEventsBound) {
+        window.addEventListener('online', () => useOnlineTiles());
+        window.addEventListener('offline', () => useOfflineTiles('navigator-offline'));
+        tileLayerEventsBound = true;
+    }
+
+    if (navigator.onLine) {
+        useOnlineTiles();
+
+        setTimeout(() => {
+            if (!map || !onlineTileLayer || usingOfflineTiles) {
+                return;
+            }
+
+            const loadedTiles = onlineTileLayer._tiles ? Object.keys(onlineTileLayer._tiles).length : 0;
+            if (loadedTiles === 0) {
+                useOfflineTiles('online-timeout');
+            }
+        }, 4000);
+    } else {
+        useOfflineTiles('navigator-offline');
+    }
+}
+
 function displayMap(stations, connections) {
     // Initialize Leaflet map if not already initialized
     if (!map) {
         // Center on Jammu & Kashmir region (between Jammu, Srinagar, and Pathankot)
         map = L.map('network-map').setView([32.7266, 74.8570], 9);
-        
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-            minZoom: 6
-        }).addTo(map);
     }
+    
+    // Ensure tile layers are configured (with offline fallback)
+    setupTileLayers();
     
     // Clear existing markers, power lines, and all overlays
     Object.values(markers).forEach(marker => map.removeLayer(marker));
